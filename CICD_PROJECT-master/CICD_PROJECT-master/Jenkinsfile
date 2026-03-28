@@ -1,7 +1,7 @@
 pipeline {
     agent { label 'controller' }
     environment {
-        IMAGE_NAME = "ltmmrepo"
+        IMAGE_NAME = "ltmrepo"
         IMAGE_TAG  = "${BUILD_NUMBER}"
         IMAGE_REPO = "public.ecr.aws/b9j0f8k9/ltmm:latest"
     }
@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 echo "Checking out source code"
-                git branch: 'main', url: 'https://github.com/HEENAJAFAR/project'
+                git 'https://github.com/HEENAJAFAR/project.git'
                 sh 'sudo chown jenkins:jenkins /var/lib/jenkins/efs'
                 sh 'sudo cp -r * /var/lib/jenkins/efs'
                 sh 'sudo chown jenkins:jenkins /var/lib/jenkins/efs/*'
