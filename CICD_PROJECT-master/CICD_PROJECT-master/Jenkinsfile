@@ -22,20 +22,16 @@ pipeline {
         stage('Build Application (Java + Maven)') {
             agent { label 'build' }
 
-            steps {
-
-                sh '''
-                    sudo chown -R jenkins:jenkins /home/jenkins/build
-                    sudo chmod 777 /home/jenkins/build
-                    sudo chown -R jenkins:jenkins /home/jenkins/build/*
-                    cd /home/jenkins/build
-                    mvn clean package
-                    cd /home/jenkins/build/target
-                    sudo cp ROOT.war /home/jenkins/build && cd ..
-                    ls -al
-                '''
-            }
+           
+steps {
+        dir('/var/lib/jenkins/efs/CICD_PROJECT-master') {
+            sh '''
+                mvn clean package
+                ls -al target
+            '''
         }
+    }
+
 
         stage('Build & Push Docker Image') {
             agent { label 'docker' }
