@@ -97,17 +97,22 @@ pipeline {
             }
         }
 
+        
         stage('Build Application (Java + Maven)') {
-            agent { label 'build' }
+            agent {
+              label 'build'
+              customWorkspace '/home/jenkins/build-workspace'
+         }
             steps {
-                dir('CICD_PROJECT-master/CICD_PROJECT-master') {
-                    sh '''
-                      mvn clean package
-                      ls -al target
-                    '''
-                }
-            }
-        }
+              dir('CICD_PROJECT-master/CICD_PROJECT-master') {
+                sh '''
+                mvn clean package
+                ls -al target
+               '''
+           }
+       }
+   }
+
 
         stage('Prepare Docker Context') {
             agent { label 'docker' }
