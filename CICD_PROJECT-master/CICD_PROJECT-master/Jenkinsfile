@@ -71,8 +71,14 @@
 //     }
 // }
 
+
+
 pipeline {
     agent { label 'controller' }
+
+    options {
+        skipDefaultCheckout(true)
+    }
 
     environment {
         IMAGE_NAME = "ltmmrepo"
@@ -87,7 +93,6 @@ pipeline {
                 echo "Checking out source code"
                 git branch: 'main',
                     url: 'https://github.com/HEENAJAFAR/project.git'
-
                 sh 'ls -al'
             }
         }
@@ -109,12 +114,10 @@ pipeline {
             steps {
                 sh '''
                   mkdir -p /home/jenkins/docker
-
                   cp CICD_PROJECT-master/CICD_PROJECT-master/target/ROOT.war /home/jenkins/docker/
                   cp CICD_PROJECT-master/CICD_PROJECT-master/Dockerfile /home/jenkins/docker/
                   cp CICD_PROJECT-master/CICD_PROJECT-master/deployment.yml /home/jenkins/docker/
                   cp CICD_PROJECT-master/CICD_PROJECT-master/svc.yml /home/jenkins/docker/
-
                   ls -al /home/jenkins/docker
                 '''
             }
@@ -125,12 +128,9 @@ pipeline {
             steps {
                 sh '''
                   cd /home/jenkins/docker
-
                   docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-
                   aws ecr-public get-login-password --region us-east-1 \
                   | docker login --username AWS --password-stdin public.ecr.aws/b9j0f8k9
-
                   docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_REPO}:${IMAGE_TAG}
                   docker push ${IMAGE_REPO}:${IMAGE_TAG}
                 '''
@@ -142,11 +142,9 @@ pipeline {
             steps {
                 sh '''
                   cd /home/jenkins/docker
-
                   kubectl apply -f deployment.yml
                   kubectl set image deployment/tomcat \
                   mindtree=${IMAGE_REPO}:${IMAGE_TAG} --record
-
                   kubectl apply -f svc.yml
                 '''
             }
