@@ -1,11 +1,8 @@
 pipeline {
     agent { label 'controller' }
-
     environment {
-        IMAGE_NAME = "ltmrepo"
+        IMAGE_NAME = "ltmmrepo"
         IMAGE_TAG  = "${BUILD_NUMBER}"
-
-        // FIX: repo WITHOUT :latest (otherwise it becomes :latest:BUILD_NUMBER)
         IMAGE_REPO = "public.ecr.aws/b9j0f8k9/ltmm"
     }
 
@@ -14,7 +11,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 echo "Checking out source code"
-                git branch: 'main', url: 'https://github.com/HEENAJAFAR/project.git'
+                git 'https://github.com/HEENAJAFAR/project.git'
                 sh 'sudo chown jenkins:jenkins /var/lib/jenkins/efs'
                 sh 'sudo cp -r * /var/lib/jenkins/efs'
                 sh 'sudo chown jenkins:jenkins /var/lib/jenkins/efs/*'
@@ -24,16 +21,21 @@ pipeline {
 
         stage('Build Application (Java + Maven)') {
             agent { label 'build' }
+
             steps {
-                // FIX: correct folder which contains pom.xml
-                dir('/var/lib/jenkins/efs/CICD_PROJECT-master/CICD_PROJECT-master') {
-                    sh '''
-                        mvn clean package
-                        ls -al target
-                    '''
-                }
+
+                sh '''
+                    sudo chown -R jenkins:jenkins /home/jenkins/build
+                    sudo chmod 777 /home/jenkins/build
+                    sudo chown -R jenkins:jenkins /home/jenkins/build/*
+                    cd /home/jenkins/build
+                    mvn clean package
+                    cd /home/jenkins/build/target
+                    sudo cp ROOT.war /home/jenkins/build && cd ..
+                    ls -al
+                '''
             }
-        }  // ✅ FIX: this closing brace was missing in your file
+        }
 
         stage('Build & Push Docker Image') {
             agent { label 'docker' }
@@ -44,11 +46,8 @@ pipeline {
                     sudo chown -R jenkins:jenkins /home/jenkins/docker/*
                     cd /home/jenkins/docker
                     ls -al
-
                     docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-
                     aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/b9j0f8k9
-
                     docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_REPO}:${IMAGE_TAG}
                     docker push ${IMAGE_REPO}:${IMAGE_TAG}
                 '''
@@ -57,20 +56,20 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             agent { label 'docker' }
+
             steps {
                 sh '''
-                    cd /home/jenkins/docker
-                    sudo kubectl delete deployment tomcat --ignore-not-found=true
-                    sudo kubectl delete pods --all --force --grace-period=0
-                    sudo kubectl apply -f deployment.yml
-
-                    sudo kubectl set image deployment/tomcat mindtreerepo="${IMAGE_REPO}:${IMAGE_TAG}" --record
-
-                    sudo kubectl apply -f svc.yml
-                '''
+                 cd /home/jenkins/docker
+                 sudo kubectl delete deployment tomcat --ignore-not-found=true
+                 sudo kubectl delete pods --all --force --grace-period=0
+                 sudo kubectl apply -f deployment.yml
+                 sudo kubectl set image deployment/tomcat ltmmrepo="${IMAGE_REPO}:${IMAGE_TAG}" --record
+                 sudo kubectl apply -f svc.yml
+        '''
             }
         }
     }
 }
+
 
         
