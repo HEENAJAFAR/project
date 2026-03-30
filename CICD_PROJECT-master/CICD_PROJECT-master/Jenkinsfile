@@ -100,7 +100,7 @@ pipeline {
         stage('Build Application (Java + Maven)') {
             agent {
                 label 'build'
-                customWorkspace '/home/jenkins/build-workspace'
+                // customWorkspace '/home/jenkins/build-workspace'
             }
             steps {
                 dir('CICD_PROJECT-master/CICD_PROJECT-master') {
@@ -115,7 +115,7 @@ pipeline {
         stage('Prepare Docker Context') {
             agent {
                 label 'docker'
-                customWorkspace '/home/jenkins/docker-workspace'
+                // customWorkspace '/home/jenkins/docker-workspace'
             }
             steps {
                 sh '''
@@ -132,7 +132,7 @@ pipeline {
         stage('Build & Push Docker Image') {
             agent {
                 label 'docker'
-                customWorkspace '/home/jenkins/docker-workspace'
+                // customWorkspace '/home/jenkins/docker-workspace'
             }
             steps {
                 sh '''
@@ -149,7 +149,7 @@ pipeline {
         stage('Deploy to Kubernetes') {
             agent {
                 label 'docker'
-                customWorkspace '/home/jenkins/docker-workspace'
+                // customWorkspace '/home/jenkins/docker-workspace'
             }
             steps {
                 sh '''
