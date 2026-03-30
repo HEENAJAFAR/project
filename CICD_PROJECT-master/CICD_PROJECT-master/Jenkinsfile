@@ -97,42 +97,46 @@ pipeline {
             }
         }
 
-        
         stage('Build Application (Java + Maven)') {
             agent {
-              label 'build'
-              customWorkspace '/home/jenkins/build-workspace'
-         }
+                label 'build'
+                customWorkspace '/home/jenkins/build-workspace'
+            }
             steps {
-              dir('CICD_PROJECT-master/CICD_PROJECT-master') {
-                sh '''
-                mvn clean package
-                ls -al target
-               '''
-           }
-       }
-   }
-
+                dir('CICD_PROJECT-master/CICD_PROJECT-master') {
+                    sh '''
+                      mvn clean package
+                      ls -al target
+                    '''
+                }
+            }
+        }
 
         stage('Prepare Docker Context') {
-            agent { label 'docker' }
+            agent {
+                label 'docker'
+                customWorkspace '/home/jenkins/docker-workspace'
+            }
             steps {
                 sh '''
-                  mkdir -p /home/jenkins/docker
-                  cp CICD_PROJECT-master/CICD_PROJECT-master/target/ROOT.war /home/jenkins/docker/
-                  cp CICD_PROJECT-master/CICD_PROJECT-master/Dockerfile /home/jenkins/docker/
-                  cp CICD_PROJECT-master/CICD_PROJECT-master/deployment.yml /home/jenkins/docker/
-                  cp CICD_PROJECT-master/CICD_PROJECT-master/svc.yml /home/jenkins/docker/
-                  ls -al /home/jenkins/docker
+                  mkdir -p docker
+                  cp CICD_PROJECT-master/CICD_PROJECT-master/target/ROOT.war docker/
+                  cp CICD_PROJECT-master/CICD_PROJECT-master/Dockerfile docker/
+                  cp CICD_PROJECT-master/CICD_PROJECT-master/deployment.yml docker/
+                  cp CICD_PROJECT-master/CICD_PROJECT-master/svc.yml docker/
+                  ls -al docker
                 '''
             }
         }
 
         stage('Build & Push Docker Image') {
-            agent { label 'docker' }
+            agent {
+                label 'docker'
+                customWorkspace '/home/jenkins/docker-workspace'
+            }
             steps {
                 sh '''
-                  cd /home/jenkins/docker
+                  cd docker
                   docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
                   aws ecr-public get-login-password --region us-east-1 \
                   | docker login --username AWS --password-stdin public.ecr.aws/b9j0f8k9
@@ -143,10 +147,13 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-            agent { label 'docker' }
+            agent {
+                label 'docker'
+                customWorkspace '/home/jenkins/docker-workspace'
+            }
             steps {
                 sh '''
-                  cd /home/jenkins/docker
+                  cd docker
                   kubectl apply -f deployment.yml
                   kubectl set image deployment/tomcat \
                   mindtree=${IMAGE_REPO}:${IMAGE_TAG} --record
