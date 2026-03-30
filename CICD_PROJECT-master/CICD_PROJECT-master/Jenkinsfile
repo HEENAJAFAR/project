@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 echo "Checking out source code"
-                git 'https://github.com/HEENAJAFAR/project.git'
+                git 'https://github.com/HEENAJAFAR/project/tree/main/CICD_PROJECT-master/CICD_PROJECT-master.git'
                 sh 'sudo chown jenkins:jenkins /var/lib/jenkins/efs'
                 sh 'sudo cp -r * /var/lib/jenkins/efs'
                 sh 'sudo chown jenkins:jenkins /var/lib/jenkins/efs/*'
